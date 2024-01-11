@@ -3,6 +3,8 @@
 
 use hdf5::file;
 use ndarray::{Array1, ArrayD};
+use thiserror::Error;
+use anyhow::bail;
 
 pub struct H5parm {
     pub name: String,
@@ -42,11 +44,11 @@ impl H5parm {
 
     pub fn getSolSet(&self, ssname: String) -> &SolSet {
         let index = self.solsets.iter().position(|r| r.name == ssname).unwrap();
-        &self.solsets[index]
+        return &self.solsets[index];
     }
 
     pub fn getSolSets(&self) -> &Vec<SolSet> {
-        &self.solsets
+        return &self.solsets;
     }
 
     pub fn has_solset(&self, ssname: &str) -> bool {
@@ -58,6 +60,10 @@ impl H5parm {
         };
     }
 }
+
+#[derive(Debug,Error)]
+#[error("No soltab named {0} in h5parm!")]
+struct MissingSoltabError(String);
 
 #[derive(Debug)]
 pub struct SolSet {
@@ -111,19 +117,35 @@ impl SolSet {
             soltablist.push(x);
         }
 
-        SolSet {
+        return SolSet {
             name: name,
             soltabs: soltablist,
         }
     }
 
     pub fn getSolTabs(&self) -> &Vec<SolTab> {
-        &self.soltabs
+        return &self.soltabs;
     }
 
-    pub fn getSolTab(&self, st_name: String) -> &SolTab {
-        let index = self.soltabs.iter().position(|r| r.name == st_name).unwrap();
-        &self.soltabs[index]
+    pub fn getSolTab(&self, st_name: String) -> Result<&SolTab, anyhow::Error> {
+        let index: i32 = if self.has_soltab(&st_name) {
+            self.soltabs.iter().position(|r| r.name == st_name).unwrap().try_into().unwrap()
+        } else {
+            -1
+        };
+        if index < 0 {
+            bail!(MissingSoltabError(st_name));
+        }
+        return Ok(&self.soltabs[index as usize]);
+    }
+
+    pub fn has_soltab(&self, stname: &str) -> bool {
+        let result =  &self.soltabs.iter()
+            .find(|s| s.name == stname);
+        return match result {
+            None => false,
+            _ => true,
+        };
     }
 }
 

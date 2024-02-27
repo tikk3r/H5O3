@@ -1,10 +1,10 @@
 #![allow(non_snake_case)]
 // H5parm interface.
 
+use anyhow::bail;
 use hdf5::file;
 use ndarray::{Array1, ArrayD};
 use thiserror::Error;
-use anyhow::bail;
 
 pub struct H5parm {
     pub name: String,
@@ -13,33 +13,34 @@ pub struct H5parm {
 }
 
 impl H5parm {
-    pub fn open(h5parm_in: &String, readonly: bool) -> Self {
+    pub fn open(h5parm_in: &String, readonly: bool) -> Result<Self, Box<dyn std::error::Error>> {
         let infile = if readonly {
-            file::File::open(&h5parm_in).expect("Failed to read H5parm.")
+            file::File::open(&h5parm_in)
         } else {
-            file::File::open_rw(&h5parm_in).expect("Failed to read H5parm.")
+            file::File::open_rw(&h5parm_in)
         };
         let solsets = infile
+            .clone()?
             .groups()
             .expect("Failed to read SolSets from H5parm.");
 
         let mut solsetlist: Vec<SolSet> = vec![];
         for ss in solsets.iter() {
             // if ss.name().chars().nth(0).unwrap() == '/' {
-            if ss.name().starts_with('/') {
-                let x = SolSet::init(&infile, ss.name()[1..].to_string());
-                solsetlist.push(x);
+            if ss.clone().name().starts_with('/') {
+                let x = SolSet::init(&infile.clone()?, ss.name()[1..].to_string());
+                solsetlist.push(x?);
             } else {
-                let x = SolSet::init(&infile, ss.name());
-                solsetlist.push(x);
+                let x = SolSet::init(&infile.clone()?, ss.name());
+                solsetlist.push(x?);
             }
         }
 
-        return H5parm {
+        return Ok(H5parm {
             name: h5parm_in.to_string(),
-            file: infile,
+            file: infile?,
             solsets: solsetlist,
-        };
+        });
     }
 
     pub fn getSolSet(&self, ssname: String) -> &SolSet {
@@ -52,8 +53,7 @@ impl H5parm {
     }
 
     pub fn has_solset(&self, ssname: &str) -> bool {
-        let result =  &self.solsets.iter()
-            .find(|s| s.name == ssname);
+        let result = &self.solsets.iter().find(|s| s.name == ssname);
         return match result {
             None => false,
             _ => true,
@@ -61,7 +61,7 @@ impl H5parm {
     }
 }
 
-#[derive(Debug,Error)]
+#[derive(Debug, Error)]
 #[error("No soltab named {0} in h5parm!")]
 struct MissingSoltabError(String);
 
@@ -72,7 +72,7 @@ pub struct SolSet {
 }
 
 impl SolSet {
-    fn init(h5parm: &hdf5::File, name: String) -> SolSet {
+    fn init(h5parm: &hdf5::File, name: String) -> Result<Self, Box<dyn std::error::Error>> {
         let _sts = h5parm
             .group("sol000")
             .expect("Failed to read SolTabs.")
@@ -117,10 +117,10 @@ impl SolSet {
             soltablist.push(x);
         }
 
-        return SolSet {
+        return Ok(SolSet {
             name: name,
             soltabs: soltablist,
-        }
+        });
     }
 
     pub fn getSolTabs(&self) -> &Vec<SolTab> {
@@ -129,7 +129,12 @@ impl SolSet {
 
     pub fn getSolTab(&self, st_name: String) -> Result<&SolTab, anyhow::Error> {
         let index: i32 = if self.has_soltab(&st_name) {
-            self.soltabs.iter().position(|r| r.name == st_name).unwrap().try_into().unwrap()
+            self.soltabs
+                .iter()
+                .position(|r| r.name == st_name)
+                .unwrap()
+                .try_into()
+                .unwrap()
         } else {
             -1
         };
@@ -140,8 +145,7 @@ impl SolSet {
     }
 
     pub fn has_soltab(&self, stname: &str) -> bool {
-        let result =  &self.soltabs.iter()
-            .find(|s| s.name == stname);
+        let result = &self.soltabs.iter().find(|s| s.name == stname);
         return match result {
             None => false,
             _ => true,

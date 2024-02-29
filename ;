@@ -22,10 +22,14 @@ struct Args {
     solset: String,
 }
 
-fn summarise_h5parm(h5parm: &String) {
-    let h5name = h5parm.split("/").last().unwrap();
-    println!("Summarising {}\n", h5name);
-    let h5 = lofar_h5parm_rs::H5parm::open(h5parm, false).expect("Failed to read H5parm.");
+fn summarise_h5parm(&String h5name) {
+
+}
+
+fn main() {
+    let args = Args::parse();
+    println!("H5parm: {}\n", args.h5parm.split("/").last().unwrap());
+    let h5 = lofar_h5parm_rs::H5parm::open(&args.h5parm, false).expect("Failed to read H5parm.");
     println!("Solution sets:");
     for ss in h5.solsets {
         println!("|-{}", ss.name);
@@ -34,10 +38,4 @@ fn summarise_h5parm(h5parm: &String) {
         }
         println!();
     }
-}
-
-fn main() {
-    let args = Args::parse();
-    println!("H5parm: {}\n", args.h5parm);
-    summarise_h5parm(&args.h5parm);
 }

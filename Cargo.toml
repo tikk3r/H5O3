@@ -11,3 +11,10 @@ thiserror = "1.0.56"
 hdf5 = "0.8.1"
 ndarray = "0.15.6"
 num-complex = "0.4.4"
+
+[dev-dependencies]
+hdf5 = "0.8.1"
+ndarray = "0.15.6"
+clap = { version = "4.4.6", features = ["derive"] }
+num-complex = "0.4.4"
+rayon = "1.8.0"

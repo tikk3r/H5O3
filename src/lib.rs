@@ -288,7 +288,7 @@ impl SolTab {
         st.read_1d::<hdf5::types::FixedAscii<128>>().unwrap()
     }
 
-    pub fn get_history(&self) -> hdf5::types::FixedAscii::<70> {
+    pub fn get_history(&self) -> hdf5::types::FixedAscii::<8192> {
         let x = self
             ._h5parm
             .group(&self.get_full_name())
@@ -296,10 +296,10 @@ impl SolTab {
             .dataset("val")
             .unwrap()
             .attr("HISTORY000");
-
+        dbg!(&x.clone().unwrap().size());
         match x {
-            Ok(x) => x.read_scalar::<hdf5::types::FixedAscii<70>>().unwrap(),
-            Err(_) => hdf5::types::FixedAscii::<70>::from_ascii("").unwrap(),
+            Ok(x) => x.read_scalar::<hdf5::types::FixedAscii<8192>>().unwrap(),
+            Err(_) => hdf5::types::FixedAscii::<8192>::from_ascii("").unwrap(),
         }
     }
 

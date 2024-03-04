@@ -20,9 +20,12 @@ struct Args {
     /// SolSet to display.
     #[arg(long, default_value = "")]
     solset: String,
+    /// Verbose output (e.g. the history)
+    #[arg(long, default_value("false"))]
+    verbose: bool,
 }
 
-fn summarise_h5parm(h5parm: &String, solset: String) {
+fn summarise_h5parm(h5parm: &String, solset: String, verbose: bool) {
     let h5name = h5parm.split("/").last().unwrap();
     println!("Summarising {}\n", h5name);
     let h5 = lofar_h5parm_rs::H5parm::open(h5parm, false).expect("Failed to read H5parm.");
@@ -55,11 +58,13 @@ fn summarise_h5parm(h5parm: &String, solset: String) {
                         st.get_antennas().len()
                     );
                 }
-                let h = st.get_history();
-                if h.len() > 0 {
-                    println!("|\t{}", h);
+                if verbose {
+                    let h = st.get_history();
+                    if h.len() > 0 {
+                        println!("|\t{}", h);
+                    }
+                    println!("|");
                 }
-                println!("|");
             }
             println!();
         }
@@ -88,11 +93,13 @@ fn summarise_h5parm(h5parm: &String, solset: String) {
                     st.get_antennas().len()
                 );
             }
-            let h = st.get_history();
-            if h.len() > 0 {
-                println!("|\t{}", h);
+            if verbose {
+                let h = st.get_history();
+                if h.len() > 0 {
+                    println!("|\t{}", h);
+                }
+                println!("|");
             }
-            println!("|");
         }
     }
 }
@@ -100,5 +107,5 @@ fn summarise_h5parm(h5parm: &String, solset: String) {
 fn main() {
     let args = Args::parse();
     println!("H5parm: {}\n", args.h5parm);
-    summarise_h5parm(&args.h5parm, args.solset);
+    summarise_h5parm(&args.h5parm, args.solset, args.verbose);
 }

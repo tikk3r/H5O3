@@ -4,7 +4,7 @@ use clap::Parser;
 
 extern crate lofar_h5parm_rs;
 
-/// A Rust port of the polconv functionality of h5_merger.py by Jurjen de Jong.
+/// A Rust interface to summarise LOFAR H5parm calibration tables.
 #[derive(Parser, Debug)]
 #[command(name = "LOFAR-H5info")]
 #[command(author = "Frits Sweijen")]

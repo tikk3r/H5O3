@@ -3,7 +3,7 @@
 
 use anyhow::bail;
 use hdf5::file;
-use ndarray::{array,Array1, ArrayD};
+use ndarray::{array, Array1, ArrayD};
 use thiserror::Error;
 
 pub struct H5parm {
@@ -206,9 +206,9 @@ impl SolTab {
         let weights = self.get_weights();
         //let f = weights.iter().filter(|&n| *n == 0.0) / weights.sum();
         let zeros: Vec<_> = weights
-        .iter()
-        .filter_map(|&item| if item == 0.0 { Some(1) } else { Some(0) })
-        .collect();
+            .iter()
+            .filter_map(|&item| if item == 0.0 { Some(1) } else { Some(0) })
+            .collect();
         let fraction = (zeros.iter().sum::<usize>() as f64) / (weights.len() as f64);
         array![fraction]
     }
@@ -286,6 +286,21 @@ impl SolTab {
             });
         // Not sure what to do here. Surely 128 characters is fine?
         st.read_1d::<hdf5::types::FixedAscii<128>>().unwrap()
+    }
+
+    pub fn get_history(&self) -> hdf5::types::FixedAscii::<70> {
+        let x = self
+            ._h5parm
+            .group(&self.get_full_name())
+            .unwrap()
+            .dataset("val")
+            .unwrap()
+            .attr("HISTORY000");
+
+        match x {
+            Ok(x) => x.read_scalar::<hdf5::types::FixedAscii<70>>().unwrap(),
+            Err(_) => hdf5::types::FixedAscii::<70>::from_ascii("").unwrap(),
+        }
     }
 
     pub fn get_polarisations(&self) -> Array1<hdf5::types::FixedAscii<2>> {

@@ -79,20 +79,20 @@ impl SolSet {
             .groups()
             .unwrap();
         let mut soltablist: Vec<SolTab> = vec![];
-        for ss in _sts.iter() {
+        for st in _sts.iter() {
             // VarLenAscii doesn't work, so we just read a long fixed-length string...
             // There's also some ASCII vs Unicode stuff, so try both.
-            let st_type = match ss
+            let st_type = match st
                 .attr("TITLE")
                 .expect("SolTab does not appear to have a type.")
                 .read_scalar::<hdf5::types::FixedAscii<32>>()
             {
-                Ok(f) => f.as_str().to_owned(),
+                Ok(f) => f.to_string().to_owned(),
                 Err(_f) => "".to_string(),
             };
 
             let st_type = if st_type.is_empty() {
-                match ss
+                match st
                     .attr("TITLE")
                     .expect("SolTab does not appear to have a type.")
                     .read_scalar::<hdf5::types::FixedUnicode<32>>()
@@ -103,12 +103,14 @@ impl SolSet {
             } else {
                 st_type.to_string()
             };
-            let stname = ss.name().rsplit_once("/").unwrap().1.to_string();
+            let stname = st.name().rsplit_once("/").unwrap().1.to_string();
             let x = SolTab {
                 name: stname,
                 kind: match st_type.as_str() {
                     "amplitude" => SolTabKind::Amplitude,
                     "phase" => SolTabKind::Phase,
+                    "clock" => SolTabKind::Clock,
+                    "rotationmeasure" => SolTabKind::RotationMeasure,
                     _ => SolTabKind::Unknown,
                 },
                 is_fulljones: false,
@@ -204,8 +206,10 @@ impl SolTab {
         format!("/{}/{}", self._solset, self.name)
     }
 
-    pub fn get_type(&self) -> &SolTabKind {
-        &self.kind
+    //pub fn get_type(&self) -> &SolTabKind {
+    pub fn get_type(&self) -> String {
+        //&self.kind
+        format!("{:?}", self.kind)
     }
 
     pub fn get_times(&self) -> Array1<f64> {
@@ -276,7 +280,7 @@ impl SolTab {
 
     pub fn get_polarisations(&self) -> Array1<hdf5::types::FixedAscii<2>> {
         if !self.get_axes().contains(&"pol".to_string()) {
-            array![hdf5::types::FixedAscii::<2>::from_ascii("I").unwrap()]
+            array![hdf5::types::FixedAscii::<2>::from_ascii("").unwrap()]
         } else {
             let full_st_name = self.get_full_name();
             let st = self
@@ -316,6 +320,8 @@ impl SolTab {
 #[derive(Debug)]
 pub enum SolTabKind {
     Amplitude,
+    Clock,
     Phase,
+    RotationMeasure,
     Unknown,
 }

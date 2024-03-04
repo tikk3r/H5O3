@@ -3,7 +3,7 @@
 
 use anyhow::bail;
 use hdf5::file;
-use ndarray::{Array1, ArrayD};
+use ndarray::{array,Array1, ArrayD};
 use thiserror::Error;
 
 pub struct H5parm {
@@ -74,7 +74,7 @@ pub struct SolSet {
 impl SolSet {
     fn init(h5parm: &hdf5::File, name: String) -> Result<Self, Box<dyn std::error::Error>> {
         let _sts = h5parm
-            .group("sol000")
+            .group(&name)
             .expect("Failed to read SolTabs.")
             .groups()
             .unwrap();
@@ -111,6 +111,7 @@ impl SolSet {
                     "phase" => SolTabKind::Phase,
                     _ => SolTabKind::Unknown,
                 },
+                is_fulljones: false,
                 _solset: name.clone(),
                 _h5parm: h5parm.clone(),
             };
@@ -157,11 +158,27 @@ impl SolSet {
 pub struct SolTab {
     pub kind: SolTabKind,
     pub name: String,
+    pub is_fulljones: bool,
     _solset: String,
     _h5parm: hdf5::File,
 }
 
 impl SolTab {
+    /*
+    pub fn new(&mut self) -> Self {
+        SolTab {
+            name: stname,
+            kind: match st_type.as_str() {
+                "amplitude" => SolTabKind::Amplitude,
+                "phase" => SolTabKind::Phase,
+                _ => SolTabKind::Unknown,
+            },
+            is_fulljones: false,
+            _solset: name.clone(),
+            _h5parm: h5parm.clone(),
+        }
+    }*/
+
     pub fn get_axes(&self) -> Vec<String> {
         let full_st_name = self.get_full_name();
         let _axes_string = self
@@ -249,7 +266,7 @@ impl SolTab {
             .dataset("dir")
             .unwrap_or_else(|_err| {
                 panic!(
-                    "Failed to read polarisations for SolTab {}",
+                    "Failed to read directions for SolTab {}",
                     stringify!(full_st_name)
                 )
             });
@@ -258,20 +275,24 @@ impl SolTab {
     }
 
     pub fn get_polarisations(&self) -> Array1<hdf5::types::FixedAscii<2>> {
-        let full_st_name = self.get_full_name();
-        let st = self
-            ._h5parm
-            .group(&full_st_name)
-            .unwrap()
-            .dataset("pol")
-            .unwrap_or_else(|_err| {
-                panic!(
-                    "Failed to read polarisations for SolTab {}",
-                    stringify!(full_st_name)
-                )
-            });
-        // Polarisations have at most 2 letters (usually), e.g. I, Q, U, V, XX, YY, RL, LR etc.
-        st.read_1d::<hdf5::types::FixedAscii<2>>().unwrap()
+        if !self.get_axes().contains(&"pol".to_string()) {
+            array![hdf5::types::FixedAscii::<2>::from_ascii("I").unwrap()]
+        } else {
+            let full_st_name = self.get_full_name();
+            let st = self
+                ._h5parm
+                .group(&full_st_name)
+                .unwrap()
+                .dataset("pol")
+                .unwrap_or_else(|_err| {
+                    panic!(
+                        "Failed to read polarisations for SolTab {}",
+                        stringify!(full_st_name)
+                    )
+                });
+            // Polarisations have at most 2 letters (usually), e.g. I, Q, U, V, XX, YY, RL, LR etc.
+            st.read_1d::<hdf5::types::FixedAscii<2>>().unwrap()
+        }
     }
 
     pub fn get_values(&self) -> ArrayD<f64> {

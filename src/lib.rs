@@ -202,11 +202,21 @@ impl SolTab {
         &self.name
     }
 
+    pub fn get_flagged_fraction(&self) -> Array1<f64> {
+        let weights = self.get_weights();
+        //let f = weights.iter().filter(|&n| *n == 0.0) / weights.sum();
+        let zeros: Vec<_> = weights
+        .iter()
+        .filter_map(|&item| if item == 0.0 { Some(1) } else { Some(0) })
+        .collect();
+        let fraction = (zeros.iter().sum::<usize>() as f64) / (weights.len() as f64);
+        array![fraction]
+    }
+
     fn get_full_name(&self) -> String {
         format!("/{}/{}", self._solset, self.name)
     }
 
-    //pub fn get_type(&self) -> &SolTabKind {
     pub fn get_type(&self) -> String {
         //&self.kind
         format!("{:?}", self.kind)
@@ -309,6 +319,23 @@ impl SolTab {
             .unwrap_or_else(|_err| {
                 panic!(
                     "Failed to read values for SolTab {}",
+                    stringify!(full_st_name)
+                )
+            });
+        st.read_dyn::<f64>()
+            .expect("Reading SolTab into array failed!")
+    }
+
+    pub fn get_weights(&self) -> ArrayD<f64> {
+        let full_st_name = self.get_full_name();
+        let st = self
+            ._h5parm
+            .group(&full_st_name)
+            .unwrap()
+            .dataset("weight")
+            .unwrap_or_else(|_err| {
+                panic!(
+                    "Failed to read weights for SolTab {}",
                     stringify!(full_st_name)
                 )
             });

@@ -69,7 +69,7 @@ fn summarise_h5parm(h5parm: &String, solset: String, verbose: bool) {
             println!();
         }
     } else {
-        let ss = h5.getSolSet(solset);
+        let ss = h5.get_solset(solset).unwrap();
         println!("|-{}", ss.name);
         for st in &ss.soltabs {
             if st.is_fulljones {

@@ -26,8 +26,7 @@ impl H5parm {
 
         let mut solsetlist: Vec<SolSet> = vec![];
         for ss in solsets.iter() {
-            // if ss.name().chars().nth(0).unwrap() == '/' {
-            if ss.clone().name().starts_with('/') {
+            if ss.name().starts_with('/') {
                 let x = SolSet::init(&infile.clone()?, ss.name()[1..].to_string());
                 solsetlist.push(x?);
             } else {
@@ -43,13 +42,27 @@ impl H5parm {
         });
     }
 
-    pub fn getSolSet(&self, ssname: String) -> &SolSet {
-        let index = self.solsets.iter().position(|r| r.name == ssname).unwrap();
-        return &self.solsets[index];
+    pub fn get_solset(&self, ssname: String) -> Option<&SolSet> {
+        if self.get_solset_names().contains(&ssname) {
+            let index = self.solsets.iter().position(|r| r.name == ssname)?;
+            return Some(&self.solsets[index]);
+        } else {
+            return None;
+        }
     }
 
-    pub fn getSolSets(&self) -> &Vec<SolSet> {
+    pub fn get_solsets(&self) -> &Vec<SolSet> {
         return &self.solsets;
+    }
+
+    pub fn get_solset_names(&self) -> Vec<String> {
+        let names = self
+            .solsets
+            .iter()
+            .map(|ss| ss.name.clone())
+            .collect::<Vec<String>>()
+            .to_vec();
+        return names;
     }
 
     pub fn has_solset(&self, ssname: &str) -> bool {
@@ -218,7 +231,6 @@ impl SolTab {
     }
 
     pub fn get_type(&self) -> String {
-        //&self.kind
         format!("{:?}", self.kind)
     }
 
@@ -288,7 +300,7 @@ impl SolTab {
         st.read_1d::<hdf5::types::FixedAscii<128>>().unwrap()
     }
 
-    pub fn get_history(&self) -> hdf5::types::FixedAscii::<8192> {
+    pub fn get_history(&self) -> hdf5::types::FixedAscii<8192> {
         let x = self
             ._h5parm
             .group(&self.get_full_name())

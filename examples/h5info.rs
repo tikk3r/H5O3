@@ -30,34 +30,41 @@ fn summarise_h5parm(h5parm: &String, solset: String, verbose: bool) {
     println!("Summarising {}\n", h5name);
     let h5 = lofar_h5parm_rs::H5parm::open(h5parm, false).expect("Failed to read H5parm.");
     println!(
-        "{:<26} {:<19} {:<15} {:<11} {:<19}",
+        "{:<26} {:<19} {:<15} {:<11} {:<13}",
         "Solutions", "Type", "Polarisations", "% flagged", "Antennas"
     );
     if solset.len() == 0 {
         for ss in h5.solsets {
             println!("|-{}", ss.name);
             for st in ss.soltabs {
-                if st.is_fulljones {
-                    println!(
-                        "|---{:<15} Full-Jones: {} {}",
-                        st.name,
-                        st.is_fulljones,
-                        st.get_polarisations()
-                    );
-                } else {
-                    println!(
-                        "|---{:<22} {:<19} {:<15} {:<11} {:<19}",
-                        st.name,
-                        st.get_type(),
-                        st.get_polarisations().to_vec().join(","),
-                        st.get_flagged_fraction()
-                            .iter()
-                            .map(|m| format!("{:.3}%", m * 100.0))
-                            .collect::<Vec<_>>()
-                            .join(","),
-                        st.get_antennas().len()
-                    );
-                }
+                let stationlist = st.get_antennas();
+                let cs = stationlist
+                    .iter()
+                    .filter(|s| s.starts_with("CS"))
+                    .collect::<Vec<_>>();
+                let rs = stationlist
+                    .iter()
+                    .filter(|s| s.starts_with("RS"))
+                    .collect::<Vec<_>>();
+                let is = stationlist
+                    .iter()
+                    .filter(|s| !s.starts_with("CS") && !s.starts_with("RS"))
+                    .collect::<Vec<_>>();
+                println!(
+                    "|---{:<22} {:<19} {:<15} {:<11} {} ({}/{}/{})",
+                    st.name,
+                    st.get_type(),
+                    st.get_polarisations().to_vec().join(","),
+                    st.get_flagged_fraction()
+                        .iter()
+                        .map(|m| format!("{:.3}%", m * 100.0))
+                        .collect::<Vec<_>>()
+                        .join(","),
+                    st.get_antennas().len(),
+                    cs.len(),
+                    rs.len(),
+                    is.len()
+                );
                 if verbose {
                     let h = st.get_history();
                     if h.len() > 0 {
@@ -72,27 +79,29 @@ fn summarise_h5parm(h5parm: &String, solset: String, verbose: bool) {
         let ss = h5.get_solset(solset).unwrap();
         println!("|-{}", ss.name);
         for st in &ss.soltabs {
-            if st.is_fulljones {
-                println!(
-                    "|---{:<15} Full-Jones: {} {}",
-                    st.name,
-                    st.is_fulljones,
-                    st.get_polarisations()
-                );
-            } else {
-                println!(
-                    "|---{:<22} {:<19} {:<15} {:<11} {:<19}",
-                    st.name,
-                    st.get_type(),
-                    st.get_polarisations().to_vec().join(","),
-                    st.get_flagged_fraction()
-                        .iter()
-                        .map(|m| format!("{:.3}%", m * 100.0))
-                        .collect::<Vec<_>>()
-                        .join(","),
-                    st.get_antennas().len()
-                );
-            }
+            let stationlist = st.get_antennas();
+            let cs = stationlist
+                .iter()
+                .filter(|s| s.starts_with("CS"))
+                .collect::<Vec<_>>();
+            let rs = stationlist
+                .iter()
+                .filter(|s| s.starts_with("RS"))
+                .collect::<Vec<_>>();
+            println!(
+                "|---{:<22} {:<19} {:<15} {:<11} {:<19} ({}/{})",
+                st.name,
+                st.get_type(),
+                st.get_polarisations().to_vec().join(","),
+                st.get_flagged_fraction()
+                    .iter()
+                    .map(|m| format!("{:.3}%", m * 100.0))
+                    .collect::<Vec<_>>()
+                    .join(","),
+                st.get_antennas().len(),
+                cs.len(),
+                rs.len()
+            );
             if verbose {
                 let h = st.get_history();
                 if h.len() > 0 {

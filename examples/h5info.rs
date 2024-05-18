@@ -40,7 +40,7 @@ fn summarise_h5parm(h5parm: &String, solset: String, verbose: bool) {
                 let stationlist = st.get_antennas();
                 let cs = stationlist
                     .iter()
-                    .filter(|s| s.starts_with("CS"))
+                    .filter(|s| s.starts_with("CS") || s.starts_with("ST"))
                     .collect::<Vec<_>>();
                 let rs = stationlist
                     .iter()

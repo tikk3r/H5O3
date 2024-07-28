@@ -139,11 +139,21 @@ impl SolSet {
         });
     }
 
-    pub fn getSolTabs(&self) -> &Vec<SolTab> {
+    pub fn get_soltabs(&self) -> &Vec<SolTab> {
         return &self.soltabs;
     }
 
-    pub fn getSolTab(&self, st_name: String) -> Result<&SolTab, anyhow::Error> {
+    pub fn get_soltab_names(&self) -> Vec<String> {
+        let names = self
+            .soltabs
+            .iter()
+            .map(|ss| ss.name.clone())
+            .collect::<Vec<String>>()
+            .to_vec();
+        return names;
+    }
+
+    pub fn get_soltab(&self, st_name: String) -> Result<&SolTab, anyhow::Error> {
         let index: i32 = if self.has_soltab(&st_name) {
             self.soltabs
                 .iter()

@@ -78,7 +78,7 @@ impl H5parm {
 #[error("No soltab named {0} in h5parm!")]
 struct MissingSoltabError(String);
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SolSet {
     pub name: String,
     pub soltabs: Vec<SolTab>,

@@ -179,7 +179,7 @@ impl SolSet {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SolTab {
     pub kind: SolTabKind,
     pub name: String,
@@ -381,7 +381,7 @@ impl SolTab {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum SolTabKind {
     Amplitude,
     Clock,

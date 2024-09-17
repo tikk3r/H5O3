@@ -1,0 +1,19 @@
+#![allow(non_snake_case)]
+// H5parm interface.
+
+use pyo3::prelude::*;
+
+#[pyclass]
+pub struct H5parm {
+    pub name: String,
+}
+
+#[pymodule]
+fn lofar_h5parm(_py: Python, m: &PyModule) -> PyResult<()> {
+    m.add_class::<H5parm>()?;
+    Ok(())
+}
+
+#[pymethods]
+impl H5parm {}
+

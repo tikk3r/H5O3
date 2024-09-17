@@ -2,26 +2,38 @@
 // H5parm interface.
 
 use anyhow::bail;
+use anyhow;
 use hdf5::file;
 use ndarray::{array, Array1, ArrayD};
 use thiserror::Error;
 
-#[derive(Debug, Clone)]
+use pyo3::prelude::*;
+
+#[pyclass]
 pub struct H5parm {
     pub name: String,
     pub file: file::File,
     pub solsets: Vec<SolSet>,
 }
 
+#[pymodule]
+fn lofar_h5parm(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add_class::<H5parm>()?;
+    Ok(())
+}
+
+#[pymethods]
 impl H5parm {
-    pub fn open(h5parm_in: &String, readonly: bool) -> Result<Self, Box<dyn std::error::Error>> {
+    //pub fn open(h5parm_in: &String, readonly: bool) -> Result<Self, Box<dyn std::error::Error>> {
+    #[new]
+    pub fn open(h5parm_in: &String, readonly: bool) -> Result<Self, anyhow::Error> {
         let infile = if readonly {
             file::File::open(&h5parm_in)
         } else {
             file::File::open_rw(&h5parm_in)
         };
         let solsets = infile
-            .clone()?
+            .clone().unwrap()
             .groups()
             .expect("Failed to read SolSets from H5parm.");
 
@@ -29,10 +41,10 @@ impl H5parm {
         for ss in solsets.iter() {
             if ss.name().starts_with('/') {
                 let x = SolSet::init(&infile.clone()?, ss.name()[1..].to_string());
-                solsetlist.push(x?);
+                solsetlist.push(x.unwrap());
             } else {
                 let x = SolSet::init(&infile.clone()?, ss.name());
-                solsetlist.push(x?);
+                solsetlist.push(x.unwrap());
             }
         }
 
@@ -79,14 +91,18 @@ impl H5parm {
 #[error("No soltab named {0} in h5parm!")]
 struct MissingSoltabError(String);
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
+#[pyclass]
 pub struct SolSet {
     pub name: String,
     pub soltabs: Vec<SolTab>,
 }
 
+
+#[pymethods]
 impl SolSet {
-    fn init(h5parm: &hdf5::File, name: String) -> Result<Self, Box<dyn std::error::Error>> {
+    //fn init(h5parm: &hdf5::File, name: String) -> Result<Self, Box<dyn std::error::Error>> {
+    fn init(h5parm: &hdf5::File, name: String) -> Result<Self, anyhow::Error> {
         let _sts = h5parm
             .group(&name)
             .expect("Failed to read SolTabs.")
@@ -180,7 +196,7 @@ impl SolSet {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct SolTab {
     pub kind: SolTabKind,
     pub name: String,
@@ -382,7 +398,7 @@ impl SolTab {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub enum SolTabKind {
     Amplitude,
     Clock,

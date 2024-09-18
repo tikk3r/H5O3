@@ -217,7 +217,7 @@ impl SolTab {
             .expect("SolTab is missing AXES attribute!")
             // Axes are time, ant, freq and optionally dir or pol.
             // This is a single comma-separated string, so max length 22 including commas.
-            .read_scalar::<hdf5::types::FixedAscii<22>>()
+            .read_scalar::<hdf5::types::FixedAscii<23>>()
             .unwrap();
         _axes_string.split(",").map(str::to_string).collect()
     }
@@ -228,11 +228,8 @@ impl SolTab {
 
     pub fn get_flagged_fraction(&self) -> f64 {
         let weights = self.get_weights();
-        let zeros: Vec<_> = weights
-            .iter()
-            .filter_map(|&item| if item == 0.0 { Some(1) } else { Some(0) })
-            .collect();
-        let fraction = (zeros.iter().sum::<usize>() as f64) / (weights.len() as f64);
+        let total_flags = weights.sum() as f64;
+        let fraction = 1.0 - (total_flags / weights.len() as f64);
         fraction
     }
 
@@ -288,21 +285,15 @@ impl SolTab {
         st.read_1d::<hdf5::types::FixedAscii<9>>().unwrap()
     }
 
-    pub fn get_directions(&self) -> Array1<hdf5::types::FixedAscii<128>> {
+    pub fn get_directions(&self) -> Result<Array1<hdf5::types::FixedAscii<128>>, hdf5::Error> {
         let full_st_name = self.get_full_name();
         let st = self
             ._h5parm
-            .group(&full_st_name)
-            .unwrap()
-            .dataset("dir")
-            .unwrap_or_else(|_err| {
-                panic!(
-                    "Failed to read directions for SolTab {}",
-                    stringify!(full_st_name)
-                )
-            });
-        // Not sure what to do here. Surely 128 characters is fine?
-        st.read_1d::<hdf5::types::FixedAscii<128>>().unwrap()
+            .group(&full_st_name)?
+            .dataset("dir")?
+            .read_1d::<hdf5::types::FixedAscii<128>>();
+        dbg!(&st);
+        st
     }
 
     pub fn get_history(&self) -> hdf5::types::FixedAscii<8192> {

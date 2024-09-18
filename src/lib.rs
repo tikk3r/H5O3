@@ -226,15 +226,14 @@ impl SolTab {
         &self.name
     }
 
-    pub fn get_flagged_fraction(&self) -> Array1<f64> {
+    pub fn get_flagged_fraction(&self) -> f64 {
         let weights = self.get_weights();
-        //let f = weights.iter().filter(|&n| *n == 0.0) / weights.sum();
         let zeros: Vec<_> = weights
             .iter()
             .filter_map(|&item| if item == 0.0 { Some(1) } else { Some(0) })
             .collect();
         let fraction = (zeros.iter().sum::<usize>() as f64) / (weights.len() as f64);
-        array![fraction]
+        fraction
     }
 
     fn get_full_name(&self) -> String {
@@ -261,20 +260,15 @@ impl SolTab {
         st.read_1d::<f64>().unwrap()
     }
 
-    pub fn get_frequencies(&self) -> Array1<f64> {
+    pub fn get_frequencies(&self) -> Result<Array1<f64>, hdf5::Error> {
         let full_st_name = self.get_full_name();
         let st = self
             ._h5parm
             .group(&full_st_name)
             .unwrap()
-            .dataset("freq")
-            .unwrap_or_else(|_err| {
-                panic!(
-                    "Failed to read frequencies for SolTab {}",
-                    stringify!(full_st_name)
-                )
-            });
-        st.read_1d::<f64>().unwrap()
+            .dataset("freq")?
+            .read_1d::<f64>();
+        st
     }
 
     pub fn get_antennas(&self) -> Array1<hdf5::types::FixedAscii<9>> {

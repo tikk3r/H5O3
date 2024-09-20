@@ -292,7 +292,6 @@ impl SolTab {
             .group(&full_st_name)?
             .dataset("dir")?
             .read_1d::<hdf5::types::FixedAscii<128>>();
-        dbg!(&st);
         st
     }
 
@@ -304,7 +303,6 @@ impl SolTab {
             .dataset("val")
             .unwrap()
             .attr("HISTORY000");
-        dbg!(&x.clone().unwrap().size());
         match x {
             Ok(x) => x.read_scalar::<hdf5::types::FixedAscii<8192>>().unwrap(),
             Err(_) => hdf5::types::FixedAscii::<8192>::from_ascii("").unwrap(),

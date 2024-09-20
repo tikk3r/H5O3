@@ -124,6 +124,7 @@ impl SolSet {
                     "amplitude" => SolTabKind::Amplitude,
                     "phase" => SolTabKind::Phase,
                     "clock" => SolTabKind::Clock,
+                    "error" => SolTabKind::Error,
                     "rotationmeasure" => SolTabKind::RotationMeasure,
                     "tec" => SolTabKind::Tec,
                     _ => SolTabKind::Unknown,
@@ -370,6 +371,7 @@ impl SolTab {
 pub enum SolTabKind {
     Amplitude,
     Clock,
+    Error,
     Phase,
     RotationMeasure,
     Tec,

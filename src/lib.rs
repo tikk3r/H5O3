@@ -125,6 +125,7 @@ impl SolSet {
                     "phase" => SolTabKind::Phase,
                     "clock" => SolTabKind::Clock,
                     "rotationmeasure" => SolTabKind::RotationMeasure,
+                    "tec" => SolTabKind::Tec,
                     _ => SolTabKind::Unknown,
                 },
                 is_fulljones: false,
@@ -371,5 +372,6 @@ pub enum SolTabKind {
     Clock,
     Phase,
     RotationMeasure,
+    Tec,
     Unknown,
 }

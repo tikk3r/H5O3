@@ -5,12 +5,13 @@ use std::ops::{Rem, SubAssign};
 use clap::Parser;
 use medians::Medianf64;
 use ndarray::{s, Array1};
-use num::complex::{Complex,ComplexFloat};
+use num::complex::{Complex, ComplexFloat};
 
 extern crate lofar_h5parm_rs;
 
 /// Flags LINC Target phase solutions based on their relative noise with respect to the core
-/// stations.
+/// stations. Solutions are flagged by setting their weight to 0. Optionally, the data can also be
+/// set to NaN.
 #[derive(Parser, Debug)]
 #[command(name = "flag-linc-target")]
 #[command(author = "Frits Sweijen")]
@@ -23,6 +24,18 @@ struct Args {
     /// H5parm to flag.
     #[arg(long)]
     h5parm: String,
+    /// Solset to flag.
+    #[arg(long)]
+    solset: String,
+    /// Soltab to flag.
+    #[arg(long)]
+    soltab: String,
+    /// Multiple of the standard deviation above which to flag solutions.
+    #[arg(long, default_value = "3.0")]
+    sigma: f64,
+    /// Also sets the data to NaN.
+    #[arg(long, default_value = "false")]
+    blank_data: bool,
 }
 
 fn medfilt(input: &Array1<f64>, kernel_size: usize) -> Vec<f64> {
@@ -58,25 +71,24 @@ fn circstd(x: Array1<f64>) -> f64 {
         m += z;
     }
     let num = Complex::from_polar(m.abs() / x.len() as f64, m.arg());
-    let R = num.abs();
-    assert!(R <= 1.0, "R should be smaller than one");
-    assert!(R >= 0.0, "R should be larger than zero");
-    let s = (-2.0 * R.ln()).sqrt();
+    let r = num.abs();
+    assert!(r <= 1.0, "r should be smaller than one");
+    assert!(r >= 0.0, "r should be larger than zero");
+    let s = (-2.0 * r.ln()).sqrt();
     s
 }
 
 fn main() {
     let args = Args::parse();
-    println!("Reading H5parm");
-    let h5parm1 = lofar_h5parm_rs::H5parm::open(&args.h5parm, false).expect("FAILURE");
-    println!("Reading SolSet");
-    let solset1 = h5parm1
-        .get_solset("target".to_string())
-        .expect("Failed to load solset");
-    println!("Reading phases");
-    let phase = solset1
-        .get_soltab("TGSSphase_final".to_string())
-        .expect("Loading phase soltab failed");
+    let h5parm = lofar_h5parm_rs::H5parm::open(&args.h5parm, false)
+        .expect("Failed opening h5parm in readwrite mode.");
+    let solset = h5parm
+        .get_solset(args.solset)
+        .expect("Failed to load solset.");
+    let phase = solset
+        .get_soltab(args.soltab)
+        .expect("Failed to load soltab.");
+
     let mut vals_p = phase.get_values();
     for i in 0..vals_p.shape()[1] {
         let ref_phase = vals_p.slice(s![.., 13, .., ..]).to_owned();
@@ -118,16 +130,21 @@ fn main() {
     println!("Median core scatter: {}", median_std);
     let freqs = phase.get_frequencies().unwrap();
     let time = phase.get_times();
-    for chan in 0..freqs.len() {
-        for (station, station_name) in ant.iter().enumerate() {
-            if station_name.contains("CS") || station_name.contains("RS") {
-                //if station_name.contains("CS101HBA1") {
-                //print!("Channel {: >4}; {: >10}\r", chan, station_name);
+    let mut weights = phase.get_weights();
+
+    for (station, station_name) in ant.iter().enumerate() {
+        if station_name.contains("CS") || station_name.contains("RS") {
+            for chan in 0..freqs.len() {
                 let remaining = time.len().rem_euclid(8);
                 for chunk in (0..time.len() - remaining).step_by(8) {
                     let temp_phase = vals_diff.slice(s![chunk..chunk + 8, station, chan]);
-                    if temp_phase.std(1.0) > median_std {
+                    //if temp_phase.std(1.0) > median_std {
+                    if circstd(temp_phase.to_owned()) > args.sigma * median_std {
                         vals_p
+                            .slice_mut(s![chunk..chunk + 8, station, chan, ..])
+                            .iter_mut()
+                            .for_each(|f| *f = std::f64::NAN);
+                        weights
                             .slice_mut(s![chunk..chunk + 8, station, chan, ..])
                             .iter_mut()
                             .for_each(|f| *f = std::f64::NAN);
@@ -135,25 +152,38 @@ fn main() {
                 }
                 let final_chunk = time.len() - remaining;
                 let temp_phase = vals_diff.slice(s![final_chunk..time.len(), station, chan]);
-                if temp_phase.std(1.0) > median_std {
+                if circstd(temp_phase.to_owned()) > args.sigma * median_std {
                     vals_p
                         .slice_mut(s![final_chunk..time.len(), station, chan, ..])
                         .iter_mut()
-                        .for_each(|f| *f = std::f64::NAN);
+                        .for_each(|f| *f = 0.0);
+                    weights
+                        .slice_mut(s![final_chunk..time.len(), station, chan, ..])
+                        .iter_mut()
+                        .for_each(|f| *f = 0.0);
                 }
             }
         }
     }
 
-    //h5parm1
-    //    .file
-    //    .group("/target/TGSSphase_final")
-    //    .expect("Failed to read group")
-    //    .dataset("val")
-    //    .unwrap()
-    //    .write(&vals_p)
-    //    .expect("Failed to write back to H5parm."); //.unwrap_or_else(|_err| panic!("Failed to read values for SolTab {}", stringify!(full_st_name)));
-    //h5parm1.file.flush().expect("Failed to write data to file.");
-
-    h5parm1.file.close().expect("Failed to close H5parm.");
+    if args.blank_data {
+        h5parm
+            .file
+            .group("/target/TGSSphase_final")
+            .expect("Failed to read group")
+            .dataset("val")
+            .unwrap()
+            .write(&vals_p)
+            .expect("Failed to write values back to H5parm.");
+    }
+    h5parm
+        .file
+        .group("/target/TGSSphase_final")
+        .expect("Failed to read group")
+        .dataset("weight")
+        .unwrap()
+        .write(&weights)
+        .expect("Failed to write weights back to H5parm."); //.unwrap_or_else(|_err| panic!("Failed to read values for SolTab {}", stringify!(full_st_name)));
+    h5parm.file.flush().expect("Failed to write data to file.");
+    h5parm.file.close().expect("Failed to close H5parm.");
 }

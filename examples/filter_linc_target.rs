@@ -5,8 +5,7 @@ use std::ops::{Rem, SubAssign};
 use clap::Parser;
 use medians::Medianf64;
 use ndarray::{s, Array1};
-use num::complex::Complex;
-use num_complex::ComplexFloat;
+use num::complex::{Complex,ComplexFloat};
 
 extern crate lofar_h5parm_rs;
 

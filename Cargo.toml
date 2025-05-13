@@ -2,6 +2,7 @@
 name = "lofar-h5parm-rs"
 version = "0.0.0"
 edition = "2021"
+rust-version = "1.80"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -9,12 +10,14 @@ edition = "2021"
 anyhow = "1.0.79"
 thiserror = "1.0.56"
 hdf5 = "0.8.1"
-ndarray = "0.15.6"
-num-complex = "0.4.4"
+ndarray = { version = "0.15.6", features = ["rayon"] }
 
 [dev-dependencies]
 hdf5 = "0.8.1"
 ndarray = "0.15.6"
 clap = { version = "4.4.6", features = ["derive"] }
-num-complex = "0.4.4"
 rayon = "1.8.0"
+median = "0.3.2"
+medians = "3.0.12"
+num = "0.4.3"
+ndarray-stats = "0.6.0"

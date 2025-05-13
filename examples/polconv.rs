@@ -2,7 +2,7 @@
 
 use clap::{ArgAction, Parser};
 use ndarray::{s, ArrayD};
-use num_complex::Complex;
+use num::complex::Complex;
 use std::process::Command;
 
 extern crate lofar_h5parm_rs;

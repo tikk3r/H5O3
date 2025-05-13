@@ -167,9 +167,6 @@ fn main() {
             }
         }
     }
-    let flag_pc_after = phase.get_flagged_fraction();
-    println!("Flagged fraction increased from {}% to {}%.", flag_pc_before*100.0, flag_pc_after*100.0);
-
     if args.blank_data {
         h5parm
             .file
@@ -189,5 +186,9 @@ fn main() {
         .write(&weights)
         .expect("Failed to write weights back to H5parm."); //.unwrap_or_else(|_err| panic!("Failed to read values for SolTab {}", stringify!(full_st_name)));
     h5parm.file.flush().expect("Failed to write data to file.");
+
+    let flag_pc_after = phase.get_flagged_fraction();
+    println!("Flagged fraction increased from {}% to {}%.", flag_pc_before*100.0, flag_pc_after*100.0);
+
     h5parm.file.close().expect("Failed to close H5parm.");
 }

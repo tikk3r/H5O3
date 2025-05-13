@@ -83,10 +83,10 @@ fn main() {
     let h5parm = lofar_h5parm_rs::H5parm::open(&args.h5parm, false)
         .expect("Failed opening h5parm in readwrite mode.");
     let solset = h5parm
-        .get_solset(args.solset)
+        .get_solset(args.solset.clone())
         .expect("Failed to load solset.");
     let phase = solset
-        .get_soltab(args.soltab)
+        .get_soltab(args.soltab.clone())
         .expect("Failed to load soltab.");
 
     let mut vals_p = phase.get_values();
@@ -131,6 +131,8 @@ fn main() {
     let freqs = phase.get_frequencies().unwrap();
     let time = phase.get_times();
     let mut weights = phase.get_weights();
+    
+    let flag_pc_before = phase.get_flagged_fraction();
 
     for (station, station_name) in ant.iter().enumerate() {
         if station_name.contains("CS") || station_name.contains("RS") {
@@ -147,7 +149,7 @@ fn main() {
                         weights
                             .slice_mut(s![chunk..chunk + 8, station, chan, ..])
                             .iter_mut()
-                            .for_each(|f| *f = std::f64::NAN);
+                            .for_each(|f| *f = 0.0);
                     }
                 }
                 let final_chunk = time.len() - remaining;
@@ -165,6 +167,8 @@ fn main() {
             }
         }
     }
+    let flag_pc_after = phase.get_flagged_fraction();
+    println!("Flagged fraction increased from {}% to {}%.", flag_pc_before*100.0, flag_pc_after*100.0);
 
     if args.blank_data {
         h5parm

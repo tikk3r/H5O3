@@ -107,7 +107,7 @@ fn main() {
     let pols = phase.get_polarisations();
     dbg!(pols);
 
-    let j: Complex<f64> = num_complex::Complex::i();
+    let j: Complex<f64> = Complex::i();
     println!("Starting conversion");
     if args.circ2lin {
         for idx_t in 0..time.len() {

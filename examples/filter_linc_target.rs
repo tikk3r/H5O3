@@ -74,8 +74,7 @@ fn circstd(x: Array1<f64>) -> f64 {
     let r = num.abs();
     assert!(r <= 1.0, "r should be smaller than one");
     assert!(r >= 0.0, "r should be larger than zero");
-    let s = (-2.0 * r.ln()).sqrt();
-    s
+    (-2.0 * r.ln()).sqrt()
 }
 
 fn main() {
@@ -103,7 +102,7 @@ fn main() {
     let cs_idx: Vec<_> = ant
         .iter()
         .enumerate()
-        .filter_map(|(i, &a)| a.contains("CS").then(|| i))
+        .filter_map(|(i, &a)| a.contains("CS").then_some(i))
         .collect();
     let cs_scatters: Vec<f64> = cs_idx
         .iter()
@@ -116,7 +115,7 @@ fn main() {
             let detrended = temp_phase - filtered;
             let detrended: Vec<f64> = detrended.into_iter().filter(|x| x.is_finite()).collect();
             let detrended = Array1::from_vec(detrended);
-            if detrended.len() > 0 {
+            if !detrended.is_empty() {
                 let scatter = circstd(detrended);
                 println!("Scatter for antenna {} is {}", *ant, scatter);
                 scatter
@@ -131,7 +130,7 @@ fn main() {
     let freqs = phase.get_frequencies().unwrap();
     let time = phase.get_times();
     let mut weights = phase.get_weights();
-    
+
     let flag_pc_before = phase.get_flagged_fraction();
 
     for (station, station_name) in ant.iter().enumerate() {
@@ -145,7 +144,7 @@ fn main() {
                         vals_p
                             .slice_mut(s![chunk..chunk + 8, station, chan, ..])
                             .iter_mut()
-                            .for_each(|f| *f = std::f64::NAN);
+                            .for_each(|f| *f = f64::NAN);
                         weights
                             .slice_mut(s![chunk..chunk + 8, station, chan, ..])
                             .iter_mut()
@@ -188,7 +187,11 @@ fn main() {
     h5parm.file.flush().expect("Failed to write data to file.");
 
     let flag_pc_after = phase.get_flagged_fraction();
-    println!("Flagged fraction increased from {}% to {}%.", flag_pc_before*100.0, flag_pc_after*100.0);
+    println!(
+        "Flagged fraction increased from {}% to {}%.",
+        flag_pc_before * 100.0,
+        flag_pc_after * 100.0
+    );
 
     h5parm.file.close().expect("Failed to close H5parm.");
 }

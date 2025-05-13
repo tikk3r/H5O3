@@ -51,15 +51,11 @@ fn summarise_h5parm(h5parm: &String, solset: String, verbose: bool) {
                     .filter(|s| !s.starts_with("CS") && !s.starts_with("RS"))
                     .collect::<Vec<_>>();
                 println!(
-                    "|---{:<22} {:<19} {:<15} {:<11} {} ({}/{}/{})",
+                    "|---{:<22} {:<19} {:<15} {:<11.2} {} ({}/{}/{})",
                     st.name,
                     st.get_type(),
                     st.get_polarisations().to_vec().join(","),
-                    st.get_flagged_fraction()
-                        .iter()
-                        .map(|m| format!("{:.3}%", m * 100.0))
-                        .collect::<Vec<_>>()
-                        .join(","),
+                    st.get_flagged_fraction() * 100.0,
                     st.get_antennas().len(),
                     cs.len(),
                     rs.len(),
@@ -89,15 +85,11 @@ fn summarise_h5parm(h5parm: &String, solset: String, verbose: bool) {
                 .filter(|s| s.starts_with("RS"))
                 .collect::<Vec<_>>();
             println!(
-                "|---{:<22} {:<19} {:<15} {:<11} {:<19} ({}/{})",
+                "|---{:<22} {:<19} {:<15} {:<11.2} {:<19} ({}/{})",
                 st.name,
                 st.get_type(),
                 st.get_polarisations().to_vec().join(","),
-                st.get_flagged_fraction()
-                    .iter()
-                    .map(|m| format!("{:.3}%", m * 100.0))
-                    .collect::<Vec<_>>()
-                    .join(","),
+                st.get_flagged_fraction()*100.0,
                 st.get_antennas().len(),
                 cs.len(),
                 rs.len()

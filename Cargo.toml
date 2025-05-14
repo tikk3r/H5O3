@@ -1,12 +1,15 @@
 [package]
-name = "lofar-h5parm-rs"
+name = "h5o3"
 version = "0.0.0"
 edition = "2021"
 rust-version = "1.80"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [[bin]]
-name = "filter-linc-target"
+name = "h5o3-flag-linc-target"
+
+[[bin]]
+name = "h5o3-h5info"
 
 [dependencies]
 anyhow = "1.0.79"

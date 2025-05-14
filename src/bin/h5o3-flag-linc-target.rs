@@ -7,7 +7,7 @@ use medians::Medianf64;
 use ndarray::{s, Array1};
 use num::complex::{Complex, ComplexFloat};
 
-extern crate lofar_h5parm_rs;
+extern crate h5o3;
 
 /// Flags LINC Target phase solutions based on their relative noise with respect to the core
 /// stations. Solutions are flagged by setting their weight to 0. Optionally, the data can also be
@@ -79,7 +79,7 @@ fn circstd(x: Array1<f64>) -> f64 {
 
 fn main() {
     let args = Args::parse();
-    let h5parm = lofar_h5parm_rs::H5parm::open(&args.h5parm, false)
+    let h5parm = h5o3::H5parm::open(&args.h5parm, false)
         .expect("Failed opening h5parm in readwrite mode.");
     let solset = h5parm
         .get_solset(args.solset.clone())

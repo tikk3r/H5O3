@@ -5,7 +5,7 @@ use ndarray::{s, ArrayD};
 use num::complex::Complex;
 use std::process::Command;
 
-extern crate lofar_h5parm_rs;
+extern crate h5o3;
 
 /// A Rust port of the polconv functionality of h5_merger.py by Jurjen de Jong.
 #[derive(Parser, Debug)]
@@ -65,7 +65,7 @@ fn main() {
     };
     // let h5out = format!("{}.lin.h5", args.h5parm);
     println!("Reading H5parm");
-    let h5parm1 = lofar_h5parm_rs::H5parm::open(&h5out, false).expect("FAILURE");
+    let h5parm1 = h5o3::H5parm::open(&h5out, false).expect("FAILURE");
     println!("Reading SolSet");
     let solset1 = h5parm1
         .get_solset(args.solset)

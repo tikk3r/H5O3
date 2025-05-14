@@ -2,7 +2,7 @@
 
 use clap::Parser;
 
-extern crate lofar_h5parm_rs;
+extern crate h5o3;
 
 /// A Rust interface to summarise LOFAR H5parm calibration tables.
 #[derive(Parser, Debug)]
@@ -28,7 +28,7 @@ struct Args {
 fn summarise_h5parm(h5parm: &String, solset: String, verbose: bool) {
     let h5name = h5parm.split("/").last().unwrap();
     println!("Summarising {}\n", h5name);
-    let h5 = lofar_h5parm_rs::H5parm::open(h5parm, false).expect("Failed to read H5parm.");
+    let h5 = h5o3::H5parm::open(h5parm, false).expect("Failed to read H5parm.");
     println!(
         "{:<26} {:<19} {:<15} {:<11} {:<13}",
         "Solutions", "Type", "Polarisations", "% flagged", "Antennas"

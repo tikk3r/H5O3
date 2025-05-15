@@ -2,6 +2,7 @@ H5O3 is a Rust-based interface to the LOFAR calibration tables in H5parm format 
 
 
 # Installation of binaries
+
 To use the binaries shipped with the library (`h5o3-h5info` and `h5o3-flag-linc-target`), simply install them via
 
 ```bash
